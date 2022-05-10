@@ -1,7 +1,27 @@
 #include "cache.h"
 #include "set.h"
-
+# include <vector>
+vector<vector<int>> ways_partition(NUM_CPUS);
 uint64_t l2pf_access = 0;
+
+void get_partition(){
+    ways_partition[0].push_back(0);
+    ways_partition[0].push_back(2);
+    ways_partition[0].push_back(5);
+    ways_partition[0].push_back(7);
+    ways_partition[1].push_back(1);    
+    ways_partition[1].push_back(3);    
+    ways_partition[1].push_back(4);    
+    ways_partition[1].push_back(6);    
+    ways_partition[1].push_back(8);    
+    ways_partition[1].push_back(9);    
+    ways_partition[1].push_back(10);    
+    ways_partition[1].push_back(11);    
+    ways_partition[1].push_back(12);    
+    ways_partition[1].push_back(13);    
+    ways_partition[1].push_back(14);    
+    ways_partition[1].push_back(15);    
+}
 
 void CACHE::handle_fill()
 {

@@ -1,10 +1,13 @@
+#pragma once
 #ifndef CACHE_H
 #define CACHE_H
 
 #include "memory_class.h"
-
+#include <vector>
 // PAGE
 extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
+extern vector<vector<int>> ways_partition;
+extern void get_partition();
 
 // CACHE TYPE
 #define IS_ITLB 0
@@ -77,6 +80,7 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 #define LLC_PQ_SIZE NUM_CPUS*32
 #define LLC_MSHR_SIZE NUM_CPUS*64
 #define LLC_LATENCY 20  // 4/5 (L1I or L1D) + 10 + 20 = 34/35 cycles
+
 
 class CACHE : public MEMORY {
   public:
@@ -156,6 +160,7 @@ class CACHE : public MEMORY {
         pf_useful = 0;
         pf_useless = 0;
         pf_fill = 0;
+
     };
 
     // destructor
