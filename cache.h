@@ -8,6 +8,7 @@
 extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 extern vector<vector<uint32_t>> ways_partition;
 extern void get_partition();
+extern void half_counters();
 
 // CACHE TYPE
 #define IS_ITLB 0
@@ -89,7 +90,7 @@ class CACHE : public MEMORY {
     const uint32_t NUM_SET, NUM_WAY, NUM_LINE, WQ_SIZE, RQ_SIZE, PQ_SIZE, MSHR_SIZE;
     uint32_t LATENCY;
     BLOCK **block;
-    uint32_t fill_level;
+    int fill_level;
     uint32_t MAX_READ, MAX_FILL;
     uint32_t reads_available_this_cycle;
     uint8_t cache_type;
@@ -118,7 +119,7 @@ class CACHE : public MEMORY {
     uint64_t total_miss_latency;
     
     // constructor
-    CACHE(string v1, uint32_t v2, uint32_t v3, uint32_t v4, uint32_t v5, uint32_t v6, uint32_t v7, uint32_t v8) 
+    CACHE(string v1, uint32_t v2, int v3, uint32_t v4, uint32_t v5, uint32_t v6, uint32_t v7, uint32_t v8) 
         : NAME(v1), NUM_SET(v2), NUM_WAY(v3), NUM_LINE(v4), WQ_SIZE(v5), RQ_SIZE(v6), PQ_SIZE(v7), MSHR_SIZE(v8) {
 
         LATENCY = 0;
@@ -171,7 +172,7 @@ class CACHE : public MEMORY {
     };
 
     // functions
-    uint32_t  add_rq(PACKET *packet),
+    int  add_rq(PACKET *packet),
          add_wq(PACKET *packet),
          add_pq(PACKET *packet);
 
@@ -182,11 +183,11 @@ class CACHE : public MEMORY {
     uint32_t get_occupancy(uint8_t queue_type, uint64_t address),
              get_size(uint8_t queue_type, uint64_t address);
 
-    uint32_t  check_hit(PACKET *packet),
+    int  check_hit(PACKET *packet),
          invalidate_entry(uint64_t inval_addr),
          check_mshr(PACKET *packet),
-         prefetch_line(uint64_t ip, uint64_t base_addr, uint64_t pf_addr, uint32_t prefetch_fill_level, uint32_t prefetch_metadata),
-         kpc_prefetch_line(uint64_t base_addr, uint64_t pf_addr, uint32_t prefetch_fill_level, uint32_t delta, uint32_t depth, uint32_t signature, uint32_t confidence, uint32_t prefetch_metadata);
+         prefetch_line(uint64_t ip, uint64_t base_addr, uint64_t pf_addr, int prefetch_fill_level, uint32_t prefetch_metadata),
+         kpc_prefetch_line(uint64_t base_addr, uint64_t pf_addr, int prefetch_fill_level, int delta, int depth, int signature, int confidence, uint32_t prefetch_metadata);
 
     void handle_fill(),
          handle_writeback(),
@@ -240,7 +241,7 @@ class ATD{
     public:
         uint32_t atd_cpu, atd_ways, atd_sets,misses;
         uint32_t* atd_counter;
-        class ATD_entry ** atd;
+        ATD_entry ** atd;
 
     ATD(uint32_t cpu,uint32_t ways,uint32_t sets){
         atd_cpu=cpu;
@@ -251,9 +252,10 @@ class ATD{
         for(uint32_t i=0;i<atd_ways;i++){
             atd_counter[i]=0;
         }
-        atd=(class ATD_entry *)malloc(atd_sets*atd_ways*sizeof(class ATD_entry *));
+        atd=(ATD_entry **)malloc(atd_sets*atd_ways*sizeof(ATD_entry **));
         for(uint32_t i=0;i<atd_sets;i++){
             for(uint32_t j=0;j<atd_ways;j++){
+                atd[i][j]=*(new ATD_entry());
                 atd[i][j].validity=false;
                 atd[i][j].lru_position=j;
             }

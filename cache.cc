@@ -7,8 +7,25 @@ uint64_t l2pf_access = 0;
 
 void get_atds(){
     for(uint32_t i=0;i<NUM_CPUS;i++){
-        ATD temp=new ATD(i,LLC_WAY,LLC_SET);
-        atds.push_back(temp);
+        ATD* temp=new ATD(i,LLC_WAY,LLC_SET);
+        atds.push_back(*temp);
+    }
+}
+
+void half_counters(){
+    for(int i=0;i<atds.size();i++){
+        for(int j=0;j<atds[i].atd_ways;j++){
+          atds[i].atd_counter[j]/=2;
+        }
+    }
+}
+
+void initialize_partition(){
+    for(int i=0;i<LLC_WAY/2;i++){
+      ways_partition[0].push_back(i);
+    }
+    for(int i=LLC_WAY/2;i<LLC_WAY;i++){
+      ways_partition[1].push_back(i);
     }
 }
 
@@ -18,25 +35,40 @@ atds[cpu].deal_with_new_block(set,address);
 2.Call get_partition in main at intervals
 3.Complete get_partition by using utility from counters
 4.Get sample sets dynamically
+5.Half UMON counters after each partitioning interval
 */
+uint32_t find_max(uint32_t a,uint32_t b){
+    if(a>b)return a;
+    else return b;
+}
+
+uint32_t Ut(uint32_t cpu,uint32_t given_ways){
+    uint32_t utility=0;
+    for(int i=0;i<given_ways;i++){
+      utility+=atds[cpu].atd_counter[i];
+    }
+    return utility;
+}
 
 void get_partition(){
-    ways_partition[0].push_back(0);
-    ways_partition[1].push_back(2);
-    ways_partition[1].push_back(5);
-    ways_partition[1].push_back(7);
-    ways_partition[1].push_back(1);    
-    ways_partition[1].push_back(3);    
-    ways_partition[1].push_back(4);    
-    ways_partition[1].push_back(6);    
-    ways_partition[1].push_back(8);    
-    ways_partition[1].push_back(9);    
-    ways_partition[1].push_back(10);    
-    ways_partition[1].push_back(11);    
-    ways_partition[1].push_back(12);    
-    ways_partition[1].push_back(13);    
-    ways_partition[1].push_back(14);    
-    ways_partition[1].push_back(15);    
+    for(int i=0;i<NUM_CPUS;i++){
+      ways_partition[i].clear();
+    }
+    uint32_t max_utility=find_max(Ut(0,1)+Ut(1,LLC_WAY-1),0);
+    uint32_t temp=max_utility,waysforcpu0=1;
+    for(int i=2;i<LLC_WAY;i++){
+      temp=find_max(Ut(0,i)+Ut(1,LLC_WAY-i),i);
+      if(temp>max_utility){
+        waysforcpu0=i;
+        max_utility=temp;
+      }
+    }
+    for(int i=0;i<waysforcpu0;i++){
+      ways_partition[0].push_back(i);
+    }
+    for(int i=waysforcpu0;i<LLC_WAY;i++){
+      ways_partition[1].push_back(i);
+    }
 }
 
 void CACHE::handle_fill()
@@ -57,11 +89,13 @@ void CACHE::handle_fill()
 
         // find victim
         uint32_t set = get_set(MSHR.entry[mshr_index].address), way;
+        if(cache_type == IS_L2C) atds[cpu].deal_with_new_block(set,MSHR.entry[mshr_index].address);
         if (cache_type == IS_LLC) {
             way = llc_find_victim(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
         }
-        else
+        else{
             way = find_victim(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
+        }
 
 #ifdef LLC_BYPASS
         if ((cache_type == IS_LLC) && (way == LLC_WAY)) { // this is a bypass that does not fill the LLC
