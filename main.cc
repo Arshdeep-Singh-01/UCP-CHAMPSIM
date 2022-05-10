@@ -7,8 +7,10 @@
 #include <vector>
 # include "cache.h"
 
-extern vector<vector<int>> ways_partition;
+extern vector<vector<uint32_t>> ways_partition;
 extern void get_partition();
+extern vector<class ATD> atds;
+extern void get_atds();
 
 uint8_t warmup_complete[NUM_CPUS], 
         simulation_complete[NUM_CPUS], 
@@ -272,16 +274,16 @@ void print_deadlock(uint32_t i)
     assert(0);
 }
 
-void signal_handler(int signal) 
+void signal_handler(uint32_t signal) 
 {
 	cout << "Caught signal: " << signal << endl;
 	exit(1);
 }
 
 // log base 2 function from efectiu
-int lg2(int n)
+uint32_t lg2(uint32_t n)
 {
-    int i, m = n, c = -1;
+    uint32_t i, m = n, c = -1;
     for (i=0; m; i++) {
         m /= 2;
         c++;
@@ -289,18 +291,18 @@ int lg2(int n)
     return c;
 }
 
-uint64_t rotl64 (uint64_t n, unsigned int c)
+uint64_t rotl64 (uint64_t n, unsigned uint32_t c)
 {
-    const unsigned int mask = (CHAR_BIT*sizeof(n)-1);
+    const unsigned uint32_t mask = (CHAR_BIT*sizeof(n)-1);
 
     assert ( (c<=mask) &&"rotate by type width or more");
     c &= mask;  // avoid undef behaviour with NDEBUG.  0 overhead for most types / compilers
     return (n<<c) | (n>>( (-c)&mask ));
 }
 
-uint64_t rotr64 (uint64_t n, unsigned int c)
+uint64_t rotr64 (uint64_t n, unsigned uint32_t c)
 {
-    const unsigned int mask = (CHAR_BIT*sizeof(n)-1);
+    const unsigned uint32_t mask = (CHAR_BIT*sizeof(n)-1);
 
     assert ( (c<=mask) &&"rotate by type width or more");
     c &= mask;  // avoid undef behaviour with NDEBUG.  0 overhead for most types / compilers
@@ -502,7 +504,7 @@ void cpu_l1i_prefetcher_cache_fill(uint32_t cpu_num, uint64_t addr, uint32_t set
   ooo_cpu[cpu_num].l1i_prefetcher_cache_fill(addr, set, way, prefetch, evicted_addr);
 }
 
-int main(int argc, char** argv)
+uint32_t main(uint32_t argc, char** argv)
 {
 	// interrupt signal hanlder
 	struct sigaction sigIntHandler;
@@ -519,7 +521,7 @@ int main(int argc, char** argv)
     uint32_t seed_number = 0;
 
     // check to see if knobs changed using getopt_long()
-    int c;
+    uint32_t c;
     while (1) {
         static struct option long_options[] =
         {
@@ -532,7 +534,7 @@ int main(int argc, char** argv)
             {0, 0, 0, 0}      
         };
 
-        int option_index = 0;
+        uint32_t option_index = 0;
 
         c = getopt_long_only(argc, argv, "wihsb", long_options, &option_index);
 
@@ -540,7 +542,7 @@ int main(int argc, char** argv)
         if (c == -1)
             break;
 
-        int traces_encountered = 0;
+        uint32_t traces_encountered = 0;
 
         switch(c) {
             case 'w':
@@ -599,10 +601,10 @@ int main(int argc, char** argv)
     // end consequence of knobs
 
     // search through the argv for "-traces"
-    int found_traces = 0;
-    int count_traces = 0;
+    uint32_t found_traces = 0;
+    uint32_t count_traces = 0;
     cout << endl;
-    for (int i=0; i<argc; i++) {
+    for (uint32_t i=0; i<argc; i++) {
         if (found_traces)
         {
             printf("CPU %d runs %s\n", count_traces, argv[i]);
@@ -650,7 +652,7 @@ int main(int argc, char** argv)
             sprintf(ooo_cpu[count_traces].gunzip_command, fmtstr.c_str(), decomp_program.c_str(), argv[i]);
 
             char *pch[100];
-            int count_str = 0;
+            uint32_t count_str = 0;
             pch[0] = strtok (argv[i], " /,.-");
             while (pch[count_str] != NULL) {
                 //printf ("%s %d\n", pch[count_str], count_str);
@@ -661,7 +663,7 @@ int main(int argc, char** argv)
             //printf("max count_str: %d\n", count_str);
             //printf("application: %s\n", pch[count_str-3]);
 
-            int j = 0;
+            uint32_t j = 0;
             while (pch[count_str-3][j] != '\0') {
                 seed_number += pch[count_str-3][j];
                 //printf("%c %d %d\n", pch[count_str-3][j], j, seed_number);
@@ -694,7 +696,7 @@ int main(int argc, char** argv)
     // TODO: can we initialize these variables from the class constructor?
     srand(seed_number);
     champsim_seed = seed_number;
-    for (int i=0; i<NUM_CPUS; i++) {
+    for (uint32_t i=0; i<NUM_CPUS; i++) {
 
         ooo_cpu[i].cpu = i; 
         ooo_cpu[i].warmup_instructions = warmup_instructions;
@@ -791,8 +793,7 @@ int main(int argc, char** argv)
 
     uncore.LLC.llc_initialize_replacement();
     uncore.LLC.llc_prefetcher_initialize();
-
-    get_partition();
+    get_atds();
     // simulation entry point
     start_time = time(NULL);
     uint8_t run_simulation = 1;
@@ -804,7 +805,7 @@ int main(int argc, char** argv)
         elapsed_minute -= elapsed_hour*60;
         elapsed_second -= (elapsed_hour*3600 + elapsed_minute*60);
 
-        for (int i=0; i<NUM_CPUS; i++) {
+        for (uint32_t i=0; i<NUM_CPUS; i++) {
             // proceed one cycle
             current_core_cycle[i]++;
 

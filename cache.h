@@ -6,7 +6,7 @@
 #include <vector>
 // PAGE
 extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
-extern vector<vector<int>> ways_partition;
+extern vector<vector<uint32_t>> ways_partition;
 extern void get_partition();
 
 // CACHE TYPE
@@ -89,7 +89,7 @@ class CACHE : public MEMORY {
     const uint32_t NUM_SET, NUM_WAY, NUM_LINE, WQ_SIZE, RQ_SIZE, PQ_SIZE, MSHR_SIZE;
     uint32_t LATENCY;
     BLOCK **block;
-    int fill_level;
+    uint32_t fill_level;
     uint32_t MAX_READ, MAX_FILL;
     uint32_t reads_available_this_cycle;
     uint8_t cache_type;
@@ -118,7 +118,7 @@ class CACHE : public MEMORY {
     uint64_t total_miss_latency;
     
     // constructor
-    CACHE(string v1, uint32_t v2, int v3, uint32_t v4, uint32_t v5, uint32_t v6, uint32_t v7, uint32_t v8) 
+    CACHE(string v1, uint32_t v2, uint32_t v3, uint32_t v4, uint32_t v5, uint32_t v6, uint32_t v7, uint32_t v8) 
         : NAME(v1), NUM_SET(v2), NUM_WAY(v3), NUM_LINE(v4), WQ_SIZE(v5), RQ_SIZE(v6), PQ_SIZE(v7), MSHR_SIZE(v8) {
 
         LATENCY = 0;
@@ -171,7 +171,7 @@ class CACHE : public MEMORY {
     };
 
     // functions
-    int  add_rq(PACKET *packet),
+    uint32_t  add_rq(PACKET *packet),
          add_wq(PACKET *packet),
          add_pq(PACKET *packet);
 
@@ -182,11 +182,11 @@ class CACHE : public MEMORY {
     uint32_t get_occupancy(uint8_t queue_type, uint64_t address),
              get_size(uint8_t queue_type, uint64_t address);
 
-    int  check_hit(PACKET *packet),
+    uint32_t  check_hit(PACKET *packet),
          invalidate_entry(uint64_t inval_addr),
          check_mshr(PACKET *packet),
-         prefetch_line(uint64_t ip, uint64_t base_addr, uint64_t pf_addr, int prefetch_fill_level, uint32_t prefetch_metadata),
-         kpc_prefetch_line(uint64_t base_addr, uint64_t pf_addr, int prefetch_fill_level, int delta, int depth, int signature, int confidence, uint32_t prefetch_metadata);
+         prefetch_line(uint64_t ip, uint64_t base_addr, uint64_t pf_addr, uint32_t prefetch_fill_level, uint32_t prefetch_metadata),
+         kpc_prefetch_line(uint64_t base_addr, uint64_t pf_addr, uint32_t prefetch_fill_level, uint32_t delta, uint32_t depth, uint32_t signature, uint32_t confidence, uint32_t prefetch_metadata);
 
     void handle_fill(),
          handle_writeback(),
@@ -227,6 +227,97 @@ class CACHE : public MEMORY {
              find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type),
              llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type),
              lru_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type);
+};
+
+class ATD_entry{
+    public:
+        uint64_t address;
+        uint32_t lru_position;
+        uint8_t validity;
+};
+
+class ATD{
+    public:
+        uint32_t atd_cpu, atd_ways, atd_sets,misses;
+        uint32_t* atd_counter;
+        class ATD_entry ** atd;
+
+    ATD(uint32_t cpu,uint32_t ways,uint32_t sets){
+        atd_cpu=cpu;
+        atd_ways=ways;
+        atd_sets=sets;
+        atd_counter=(uint32_t*)malloc(32*atd_ways);
+        misses=0;
+        for(uint32_t i=0;i<atd_ways;i++){
+            atd_counter[i]=0;
+        }
+        atd=(class ATD_entry *)malloc(atd_sets*atd_ways*sizeof(class ATD_entry *));
+        for(uint32_t i=0;i<atd_sets;i++){
+            for(uint32_t j=0;j<atd_ways;j++){
+                atd[i][j].validity=false;
+                atd[i][j].lru_position=j;
+            }
+        }
+    }
+
+        void deal_with_new_block(uint32_t set_in_llc,uint64_t block_address){
+            uint32_t set=get_set(set_in_llc);
+            int32_t found=search_block(set,block_address);
+            if(found==-1){
+                misses++;
+                uint32_t way=find_victim(set);
+                update_lru_positions(set,way);
+                atd[set][way].address=block_address;
+            }
+            else{
+                update_counters(set,found);
+                update_lru_positions(set,found);
+            }            
+        }
+
+    private:
+        uint32_t get_set(uint32_t set){
+            return set;
+        }
+
+        int32_t search_block(uint32_t set,uint64_t block_address){
+            for(uint32_t i = 0;i<atd_ways;i++){
+                if(atd[set][i].address==block_address){
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        uint32_t find_victim(uint32_t set){
+            uint32_t way=0;
+            for(way=0;way<atd_ways;way++){
+                if(atd[set][way].validity==false){
+                    return way;
+                }
+            }
+            if(way==atd_ways){
+                for(way=0;way<atd_ways;way++){
+                    if(atd[set][way].lru_position==atd_ways-1){
+                        return way;
+                    }
+                }
+            }
+        }
+
+        void update_lru_positions(uint32_t set,uint32_t way){
+            for(uint32_t i=0;i<atd_ways;i++){
+                if (atd[set][i].lru_position < atd[set][way].lru_position){
+                        atd[set][i].lru_position++;
+                }
+            }
+            atd[set][way].lru_position= 0;
+        }
+
+        void update_counters(uint32_t set,uint32_t way){
+            atd_counter[atd[set][way].lru_position]++;
+        }
+    
 };
 
 #endif

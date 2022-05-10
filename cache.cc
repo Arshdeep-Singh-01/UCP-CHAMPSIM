@@ -1,14 +1,30 @@
 #include "cache.h"
 #include "set.h"
 # include <vector>
-vector<vector<int>> ways_partition(NUM_CPUS);
+vector<vector<uint32_t>> ways_partition(NUM_CPUS);
+vector<ATD> atds;
 uint64_t l2pf_access = 0;
+
+void get_atds(){
+    for(uint32_t i=0;i<NUM_CPUS;i++){
+        ATD temp=new ATD(i,LLC_WAY,LLC_SET);
+        atds.push_back(temp);
+    }
+}
+
+/*
+1.To add
+atds[cpu].deal_with_new_block(set,address);
+2.Call get_partition in main at intervals
+3.Complete get_partition by using utility from counters
+4.Get sample sets dynamically
+*/
 
 void get_partition(){
     ways_partition[0].push_back(0);
-    ways_partition[0].push_back(2);
-    ways_partition[0].push_back(5);
-    ways_partition[0].push_back(7);
+    ways_partition[1].push_back(2);
+    ways_partition[1].push_back(5);
+    ways_partition[1].push_back(7);
     ways_partition[1].push_back(1);    
     ways_partition[1].push_back(3);    
     ways_partition[1].push_back(4);    
