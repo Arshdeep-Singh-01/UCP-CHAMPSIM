@@ -1,4 +1,4 @@
-# ## Utility Based Cache Partitioning using Champsim (Trace Based Cache Simulator)
+### Utility Based Cache Partitioning using Champsim (Trace Based Cache Simulator)
 
 ### How to run our project
 
