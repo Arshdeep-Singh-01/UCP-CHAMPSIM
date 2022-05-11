@@ -7,7 +7,7 @@ uint64_t l2pf_access = 0;
 
 void get_atds(){
     for(uint32_t i=0;i<NUM_CPUS;i++){
-        ATD* temp=new ATD(i,LLC_WAY,LLC_SET);
+        ATD* temp=new ATD(i,LLC_WAY,32);
         atds.push_back(*temp);
     }
 }
@@ -21,22 +21,13 @@ void half_counters(){
 }
 
 void initialize_partition(){
-    for(int i=0;i<LLC_WAY/2;i++){
-      ways_partition[0].push_back(i);
-    }
-    for(int i=LLC_WAY/2;i<LLC_WAY;i++){
-      ways_partition[1].push_back(i);
+  int core=-1;
+    for(int i=0;i<LLC_WAY;i++){
+      if(i%(LLC_WAY/NUM_CPUS)==0)core++;
+      ways_partition[core].push_back(i);
     }
 }
 
-/*
-1.To add
-atds[cpu].deal_with_new_block(set,address);
-2.Call get_partition in main at intervals
-3.Complete get_partition by using utility from counters
-4.Get sample sets dynamically
-5.Half UMON counters after each partitioning interval
-*/
 uint32_t find_max(uint32_t a,uint32_t b){
     if(a>b)return a;
     else return b;
@@ -89,7 +80,7 @@ void CACHE::handle_fill()
 
         // find victim
         uint32_t set = get_set(MSHR.entry[mshr_index].address), way;
-        if(cache_type == IS_L2C) atds[cpu].deal_with_new_block(set,MSHR.entry[mshr_index].address);
+        if(cache_type == IS_L2C&& set%(LLC_SET/32)==0) atds[cpu].deal_with_new_block(set,MSHR.entry[mshr_index].address);
         if (cache_type == IS_LLC) {
             way = llc_find_victim(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
         }

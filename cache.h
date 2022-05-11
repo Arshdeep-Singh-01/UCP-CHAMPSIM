@@ -247,14 +247,18 @@ class ATD{
         atd_cpu=cpu;
         atd_ways=ways;
         atd_sets=sets;
-        atd_counter=(uint32_t*)malloc(sizeof(uint32_t)*atd_ways);
+        atd_counter=(uint32_t*)malloc(atd_ways * sizeof(atd_counter));
         misses=0;
         for(uint32_t i=0;i<atd_ways;i++){
             atd_counter[i]=0;
         }
-        for(int i=0;i<atd_sets;i++){
-            atd[i]=new ATD_entry[atd_ways];
-            for(int j=0;j<atd_ways;j++){
+        atd=(ATD_entry **)malloc(atd_sets*sizeof(ATD_entry *));
+        for(uint32_t i = 0;i<atd_sets;i++){
+            atd[i]=(ATD_entry*)malloc(atd_ways * sizeof(ATD_entry));
+        }
+        for(uint32_t i=0;i<atd_sets;i++){
+            for(uint32_t j=0;j<atd_ways;j++){
+                atd[i][j]=*(new ATD_entry());
                 atd[i][j].validity=false;
                 atd[i][j].lru_position=j;
             }
@@ -278,7 +282,8 @@ class ATD{
 
     private:
         uint32_t get_set(uint32_t set){
-            return set;
+            if(set==0) return set;
+            else return set/(LLC_SET/32);
         }
 
         uint32_t search_block(uint32_t set,uint64_t block_address){
