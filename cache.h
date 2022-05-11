@@ -273,6 +273,7 @@ class ATD{
                 uint32_t way=find_victim(set);
                 update_lru_positions(set,way);
                 atd[set][way].address=block_address;
+                atd[set][way].validity=true;
             }
             else{
                 update_counters(set,found);
@@ -288,7 +289,7 @@ class ATD{
 
         uint32_t search_block(uint32_t set,uint64_t block_address){
             for(uint32_t i = 0;i<atd_ways;i++){
-                if(atd[set][i].address==block_address){
+                if(atd[set][i].address==block_address && atd[set][i].validity==true){
                     return i;
                 }
             }
