@@ -1,14 +1,35 @@
 #include "cache.h"
 #include "set.h"
 # include <vector>
+# include <set>
+# include <iterator>
+
 vector<vector<uint32_t>> ways_partition(NUM_CPUS);
 vector<ATD> atds;
 uint64_t l2pf_access = 0;
+set<uint32_t> sample_sets;
 
 void get_atds(){
     for(uint32_t i=0;i<NUM_CPUS;i++){
         ATD* temp=new ATD(i,LLC_WAY,32);
         atds.push_back(*temp);
+    }
+}
+
+void get_sample_sets(uint64_t seed){
+    srand(seed);
+    sample_sets.clear();
+    int set;
+    while(sample_sets.size()<32){
+      set=rand()%LLC_SET;
+      sample_sets.insert(set);
+    }
+    for(int i=0;i<atds.size();i++){
+        for(int j=0;j<atds[i].atd_sets;j++){
+          for(int k=0;k<atds[i].atd_ways;k++){
+            atds[i].atd[j][k].validity=false;
+          }
+        }
     }
 }
 
@@ -48,7 +69,7 @@ void get_partition(){
     uint32_t max_utility=find_max(Ut(0,1)+Ut(1,LLC_WAY-1),0);
     uint32_t temp=max_utility,waysforcpu0=1;
     for(int i=2;i<LLC_WAY;i++){
-      temp=find_max(Ut(0,i)+Ut(1,LLC_WAY-i),i);
+      temp=find_max(Ut(0,i)+Ut(1,LLC_WAY-i),temp);
       if(temp>max_utility){
         waysforcpu0=i;
         max_utility=temp;
@@ -80,7 +101,7 @@ void CACHE::handle_fill()
 
         // find victim
         uint32_t set = get_set(MSHR.entry[mshr_index].address), way;
-        if(cache_type == IS_L2C&& set%(LLC_SET/32)==0) atds[cpu].deal_with_new_block(set,MSHR.entry[mshr_index].address);
+        if(cache_type == IS_L2C&& sample_sets.find(set)!=sample_sets.end()) atds[cpu].deal_with_new_block(set,MSHR.entry[mshr_index].address);
         if (cache_type == IS_LLC) {
             way = llc_find_victim(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
         }

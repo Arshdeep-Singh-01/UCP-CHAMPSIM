@@ -6,6 +6,8 @@
 #include <fstream>
 #include <vector>
 # include "cache.h"
+# include <set>
+# include <iterator>
 
 extern vector<vector<uint32_t>> ways_partition;
 extern void get_partition();
@@ -13,6 +15,8 @@ extern vector<class ATD> atds;
 extern void get_atds();
 extern void half_counters();
 extern void initialize_partition();
+extern void get_sample_sets(uint64_t seed);
+extern set<uint32_t> sample_sets;
 
 uint8_t warmup_complete[NUM_CPUS], 
         simulation_complete[NUM_CPUS], 
@@ -796,6 +800,7 @@ int main(uint32_t argc, char** argv)
     uncore.LLC.llc_initialize_replacement();
     uncore.LLC.llc_prefetcher_initialize();
     get_atds();
+    get_sample_sets(0);
     initialize_partition();
     // simulation entry point
     start_time = time(NULL);
@@ -812,6 +817,10 @@ int main(uint32_t argc, char** argv)
         for (int i=0; i<NUM_CPUS; i++) {
             if(cycle_count%5000==0){
                 get_partition();
+                half_counters();
+            }
+            if(cycle_count%50000==0){
+                get_sample_sets(elapsed_second);
                 half_counters();
             }
             cycle_count++;

@@ -4,11 +4,15 @@
 
 #include "memory_class.h"
 #include <vector>
+# include <set>
+# include <iterator>
 // PAGE
 extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 extern vector<vector<uint32_t>> ways_partition;
 extern void get_partition();
+extern void get_sample_sets(uint64_t seed);
 extern void half_counters();
+extern set<uint32_t> sample_sets;
 
 // CACHE TYPE
 #define IS_ITLB 0
@@ -283,8 +287,11 @@ class ATD{
 
     private:
         uint32_t get_set(uint32_t set){
-            if(set==0) return set;
-            else return set/(LLC_SET/32);
+            uint32_t i=0;
+            for(auto it=sample_sets.begin();it!=sample_sets.end();it++){
+                if(*it==set)return i;
+                i++;
+            }
         }
 
         uint32_t search_block(uint32_t set,uint64_t block_address){
