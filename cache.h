@@ -247,15 +247,14 @@ class ATD{
         atd_cpu=cpu;
         atd_ways=ways;
         atd_sets=sets;
-        atd_counter=(uint32_t*)malloc(32*atd_ways);
+        atd_counter=(uint32_t*)malloc(sizeof(uint32_t)*atd_ways);
         misses=0;
         for(uint32_t i=0;i<atd_ways;i++){
             atd_counter[i]=0;
         }
-        atd=(ATD_entry **)malloc(atd_sets*atd_ways*sizeof(ATD_entry **));
-        for(uint32_t i=0;i<atd_sets;i++){
-            for(uint32_t j=0;j<atd_ways;j++){
-                atd[i][j]=*(new ATD_entry());
+        for(int i=0;i<atd_sets;i++){
+            atd[i]=new ATD_entry[atd_ways];
+            for(int j=0;j<atd_ways;j++){
                 atd[i][j].validity=false;
                 atd[i][j].lru_position=j;
             }
@@ -264,8 +263,8 @@ class ATD{
 
         void deal_with_new_block(uint32_t set_in_llc,uint64_t block_address){
             uint32_t set=get_set(set_in_llc);
-            int32_t found=search_block(set,block_address);
-            if(found==-1){
+            uint32_t found=search_block(set,block_address);
+            if(found==atd_ways){
                 misses++;
                 uint32_t way=find_victim(set);
                 update_lru_positions(set,way);
@@ -282,13 +281,13 @@ class ATD{
             return set;
         }
 
-        int32_t search_block(uint32_t set,uint64_t block_address){
+        uint32_t search_block(uint32_t set,uint64_t block_address){
             for(uint32_t i = 0;i<atd_ways;i++){
                 if(atd[set][i].address==block_address){
                     return i;
                 }
             }
-            return -1;
+            return atd_ways;
         }
 
         uint32_t find_victim(uint32_t set){
