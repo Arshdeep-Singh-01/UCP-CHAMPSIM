@@ -7,8 +7,12 @@
 #include <vector>
 # include "cache.h"
 
-extern vector<vector<int>> ways_partition;
+extern vector<vector<uint32_t>> ways_partition;
 extern void get_partition();
+extern vector<class ATD> atds;
+extern void get_atds();
+extern void half_counters();
+extern void initialize_partition();
 
 uint8_t warmup_complete[NUM_CPUS], 
         simulation_complete[NUM_CPUS], 
@@ -502,7 +506,7 @@ void cpu_l1i_prefetcher_cache_fill(uint32_t cpu_num, uint64_t addr, uint32_t set
   ooo_cpu[cpu_num].l1i_prefetcher_cache_fill(addr, set, way, prefetch, evicted_addr);
 }
 
-int main(int argc, char** argv)
+int main(uint32_t argc, char** argv)
 {
 	// interrupt signal hanlder
 	struct sigaction sigIntHandler;
@@ -791,11 +795,12 @@ int main(int argc, char** argv)
 
     uncore.LLC.llc_initialize_replacement();
     uncore.LLC.llc_prefetcher_initialize();
-
-    get_partition();
+    get_atds();
+    initialize_partition();
     // simulation entry point
     start_time = time(NULL);
     uint8_t run_simulation = 1;
+    uint64_t cycle_count=0;
     while (run_simulation) {
 
         uint64_t elapsed_second = (uint64_t)(time(NULL) - start_time),
@@ -805,6 +810,11 @@ int main(int argc, char** argv)
         elapsed_second -= (elapsed_hour*3600 + elapsed_minute*60);
 
         for (int i=0; i<NUM_CPUS; i++) {
+            if(cycle_count%5000==0){
+                get_partition();
+                half_counters();
+            }
+            cycle_count++;
             // proceed one cycle
             current_core_cycle[i]++;
 
