@@ -1,6 +1,6 @@
 #include "cache.h"
 //#include<vector>
-int cpuways[8]={15,1,0,0,0,0,0,0}; 
+int cpuways[8]={15,1,0,0,0,0,0,0}; //This array contains the ways alloted to each CPU. For the CPUs that are not being used, the cpuways are 0. Each CPU is assigned atleast 1 way.
 
 uint32_t CACHE::find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
 {
@@ -23,17 +23,17 @@ uint32_t CACHE::lru_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const 
     if(cache_type == IS_LLC){
         uint32_t way =0;
 	int waysTaken[8]={0,0,0,0,0,0,0,0};
+	    //We calculate the ways each CPU has taken and then compare it with its alloted share
 	for(int j=0;j<NUM_WAY;j++){
 	if(block[set][j].valid==true)
 			waysTaken[block[set][j].cpu]+=1;
 	}
 
-	//cout<<"Debug"<<waysTaken[0]<<" "<<waysTaken[1]<<endl;
-// fill invalid line first
+// fill invalid line first. If the ways taken by a CPU is less than the ways alloted to it, there must be some invalid lines, We attempt to fill them first
 if(waysTaken[cpu]<cpuways[cpu]){
    for (way=0; way<NUM_WAY; way++) {
 		if (block[set][way].valid!=true){
-		waysTaken[cpu]++;
+		waysTaken[cpu]++; //We increment the number of ways taken by the CPU
 		DP ( if (warmup_complete[cpu]) {
                 cout << "[" << NAME << "] " << __func__ << " instr_id: " << instr_id << " invalid set: " << set << " way: " << way;
                 cout << hex << " address: " << (full_addr>>LOG2_BLOCK_SIZE) << " victim address: " << block[set][way].address << " data: " << block[set][way].data;
@@ -45,6 +45,7 @@ if(waysTaken[cpu]<cpuways[cpu]){
 }
 else{
     // LRU victim
+	//If the CPU has already taken the number of ways alloted to it, we use LRU replacement policy
         for (way=0; way<NUM_WAY; way++) {
             if (block[set][way].cpu ==cpu) {
 		if (block[set][way].lru ==cpuways[cpu]-1)
