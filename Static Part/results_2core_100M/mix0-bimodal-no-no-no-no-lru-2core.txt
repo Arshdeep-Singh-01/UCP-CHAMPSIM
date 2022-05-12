@@ -1,0 +1,22 @@
+
+*** ChampSim Multicore Out-of-Order Simulator ***
+
+Warmup Instructions: 1000000
+Simulation Instructions: 100000000
+Number of CPUs: 2
+LLC sets: 4096
+LLC ways: 16
+Off-chip DRAM Size: 4096 MB Channels: 1 Width: 64-bit Data Rate: 3200 MT/s
+
+CPU 0 runs /home/2020csb1072/Downloads/ChampSim/dpc3_traces/bzip2_183B.trace.xz
+CPU 1 runs /home/2020csb1072/Downloads/ChampSim/dpc3_traces/bzip2_183B.trace.xz
+CPU 0 Bimodal branch predictor
+CPU 1 Bimodal branch predictor
+
+Warmup complete CPU 0 instructions: 1000089 cycles: 382336 (Simulation time: 0 hr 0 min 3 sec) 
+Warmup complete CPU 1 instructions: 1000001 cycles: 382336 (Simulation time: 0 hr 0 min 3 sec) 
+
+Heartbeat CPU 0 instructions: 10000001 cycles: 9897406 heartbeat IPC: 1.01037 cumulative IPC: 0.945859 (Simulation time: 0 hr 0 min 25 sec) 
+Heartbeat CPU 1 instructions: 10000001 cycles: 11135675 heartbeat IPC: 0.898015 cumulative IPC: 0.836949 (Simulation time: 0 hr 0 min 28 sec) 
+Heartbeat CPU 0 instructions: 20000001 cycles: 19150446 heartbeat IPC: 1.08073 cumulative IPC: 1.01235 (Simulation time: 0 hr 0 min 47 sec) 
+Heartbeat CPU 1 instructions: 20000001 cycles: 22258922 heartbeat IPC: 0.899018 cumulative IPC: 0.868508 (Simulation time: 0 hr 0 min 55 sec) 
