@@ -4,10 +4,19 @@
 
 #include "memory_class.h"
 #include <vector>
+# include <set>
+# include <iterator>
 // PAGE
 extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
-extern vector<vector<int>> ways_partition;
+extern vector<vector<uint32_t>> ways_partition;
 extern void get_partition();
+extern void get_sample_sets(uint64_t seed);
+extern void half_counters();
+extern set<uint32_t> sample_sets;
+extern vector<uint8_t> allocated;
+extern vector<uint32_t> par_way;
+extern uint32_t next_way();
+extern uint8_t is_hit;
 
 // CACHE TYPE
 #define IS_ITLB 0
@@ -227,6 +236,106 @@ class CACHE : public MEMORY {
              find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type),
              llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type),
              lru_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type);
+};
+
+class ATD_entry{
+    public:
+        uint64_t address;
+        uint32_t lru_position;
+        uint8_t validity;
+};
+
+class ATD{
+    public:
+        uint32_t atd_cpu, atd_ways, atd_sets,misses;
+        uint32_t* atd_counter;
+        ATD_entry ** atd;
+
+    ATD(uint32_t cpu,uint32_t ways,uint32_t sets){
+        atd_cpu=cpu;
+        atd_ways=ways;
+        atd_sets=sets;
+        atd_counter=(uint32_t*)malloc(atd_ways * sizeof(atd_counter));
+        misses=0;
+        for(uint32_t i=0;i<atd_ways;i++){
+            atd_counter[i]=0;
+        }
+        atd=(ATD_entry **)malloc(atd_sets*sizeof(ATD_entry *));
+        for(uint32_t i = 0;i<atd_sets;i++){
+            atd[i]=(ATD_entry*)malloc(atd_ways * sizeof(ATD_entry));
+        }
+        for(uint32_t i=0;i<atd_sets;i++){
+            for(uint32_t j=0;j<atd_ways;j++){
+                atd[i][j]=*(new ATD_entry());
+                atd[i][j].validity=false;
+                atd[i][j].lru_position=j;
+            }
+        }
+    }
+
+        void deal_with_new_block(uint32_t set_in_llc,uint64_t block_address){
+            uint32_t set=get_set(set_in_llc);
+            uint32_t found=search_block(set,block_address);
+            if(found==atd_ways){
+                misses++;
+                uint32_t way=find_victim(set);
+                update_lru_positions(set,way);
+                atd[set][way].address=block_address;
+                atd[set][way].validity=true;
+            }
+            else{
+                update_counters(set,found);
+                update_lru_positions(set,found);
+            }            
+        }
+
+    private:
+        uint32_t get_set(uint32_t set){
+            uint32_t i=0;
+            for(auto it=sample_sets.begin();it!=sample_sets.end();it++){
+                if(*it==set)return i;
+                i++;
+            }
+        }
+
+        uint32_t search_block(uint32_t set,uint64_t block_address){
+            for(uint32_t i = 0;i<atd_ways;i++){
+                if(atd[set][i].address==block_address && atd[set][i].validity==true){
+                    return i;
+                }
+            }
+            return atd_ways;
+        }
+
+        uint32_t find_victim(uint32_t set){
+            uint32_t way=0;
+            for(way=0;way<atd_ways;way++){
+                if(atd[set][way].validity==false){
+                    return way;
+                }
+            }
+            if(way==atd_ways){
+                for(way=0;way<atd_ways;way++){
+                    if(atd[set][way].lru_position==atd_ways-1){
+                        return way;
+                    }
+                }
+            }
+        }
+
+        void update_lru_positions(uint32_t set,uint32_t way){
+            for(uint32_t i=0;i<atd_ways;i++){
+                if (atd[set][i].lru_position < atd[set][way].lru_position){
+                        atd[set][i].lru_position++;
+                }
+            }
+            atd[set][way].lru_position= 0;
+        }
+
+        void update_counters(uint32_t set,uint32_t way){
+            atd_counter[atd[set][way].lru_position]++;
+        }
+    
 };
 
 #endif
