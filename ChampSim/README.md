@@ -9,3 +9,4 @@ This works for N core where N is {2,4,8}. To run this, first select the partitio
 # Compile
 Run the run.sh file to compile and build the results. You can change the parameters like number of cores, instructions, traces in run.sh file. 
 
+To understand the changes made, reffer to the comments in the files (base_replacement.cc.cache.cc)
