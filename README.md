@@ -15,6 +15,7 @@ cd UCP-CHAMPSIM
 4) To build and compile the code run the shell script file already shipped with the code by runnig the following command
 
 ```
+chmod 700 run.sh
 ./run.sh
 ```
 
