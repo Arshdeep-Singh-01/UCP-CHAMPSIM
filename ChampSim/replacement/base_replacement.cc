@@ -58,7 +58,7 @@ else{
     }
 }
 
-    if (way == NUM_WAY+1) {
+    if (way == NUM_WAY) {
         cerr << "[" << NAME << "] " << __func__ << " no victim! set: " << set << endl;
         assert(0);
     }
