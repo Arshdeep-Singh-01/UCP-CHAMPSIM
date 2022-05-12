@@ -1,5 +1,5 @@
 
-  <h1 align="center"> ChampSim </h1>
+  <h1 align="center"> ChampSim (Static Cache Partioning) </h1>
  
 
 This directory contains implementation of Cache Partioning in static way i.e once the user sets the partition, it stays the same throughout the execution.
@@ -8,3 +8,4 @@ This works for N core where N is {2,4,8}. To run this, first select the partitio
 
 # Compile
 Run the run.sh file to compile and build the results. You can change the parameters like number of cores, instructions, traces in run.sh file. 
+
