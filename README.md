@@ -26,7 +26,7 @@ chmod 700 run.sh
 
 
 
-> **Refferences**
+> **References**
 > * [Utility-Based Cache Partitioning: A Low-Overhead, High-Performance, Runtime Mechanism to Partition Shared Caches](https://ieeexplore.ieee.org/document/4041865)
 
 
